@@ -65,7 +65,7 @@ export const ChatBot = () => {
           <CardHeader className="bg-blue-600 text-white flex flex-row items-center justify-between py-3 rounded-t-xl">
             <div className="flex items-center gap-2">
               <Bot className="h-5 w-5" />
-              <CardTitle className="text-md font-medium">Welth UI Assistant</CardTitle>
+              <CardTitle className="text-md font-medium">Budgetly UI Assistant</CardTitle>
             </div>
             <Button
               variant="ghost"

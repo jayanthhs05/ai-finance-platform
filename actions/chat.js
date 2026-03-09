@@ -43,7 +43,7 @@ export async function askAssistant(prompt, messageHistory = []) {
       .join("\n");
 
     const systemPrompt = `
-      You are a helpful, professional, and friendly AI financial assistant for the "Welth" finance platform.
+      You are a helpful, professional, and friendly AI financial assistant for the "Budgetly" finance platform.
       You have access to the user's recent financial transactions.
       
       Here is the user's recent transaction history (up to 100 latest transactions):

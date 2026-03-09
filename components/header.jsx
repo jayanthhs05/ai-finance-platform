@@ -15,7 +15,7 @@ const Header = async () => {
         <Link href="/">
           <Image
             src={"/logo.png"}
-            alt="Welth Logo"
+            alt="Budgetly Logo"
             width={200}
             height={60}
             className="h-12 w-auto object-contain"
@@ -27,12 +27,6 @@ const Header = async () => {
           <SignedOut>
             <a href="#features" className="text-gray-600 hover:text-blue-600">
               Features
-            </a>
-            <a
-              href="#testimonials"
-              className="text-gray-600 hover:text-blue-600"
-            >
-              Testimonials
             </a>
           </SignedOut>
         </div>
