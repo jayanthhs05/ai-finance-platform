@@ -17,8 +17,48 @@ export async function askAssistant(prompt, messageHistory = []) {
 
     if (!user) throw new Error("User not found");
 
-    // Fetch user's recent transactions to provide context
-    // We limit to 100 to avoid exceeding token limits, and only fetch necessary fields
+    // Fetch all user accounts with names, types, and balances
+    const accounts = await db.account.findMany({
+      where: { userId: user.id },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        balance: true,
+        isDefault: true,
+      },
+    });
+
+    // Fetch user's budget and calculate current month's expenses
+    const budget = await db.budget.findFirst({
+      where: { userId: user.id },
+    });
+
+    const currentDate = new Date();
+    const startOfMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      1
+    );
+    const endOfMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth() + 1,
+      0
+    );
+
+    const monthlyExpenses = await db.transaction.aggregate({
+      where: {
+        userId: user.id,
+        type: "EXPENSE",
+        date: {
+          gte: startOfMonth,
+          lte: endOfMonth,
+        },
+      },
+      _sum: { amount: true },
+    });
+
+    // Fetch recent transactions with full details including account name
     const transactions = await db.transaction.findMany({
       where: { userId: user.id },
       orderBy: { date: "desc" },
@@ -29,43 +69,93 @@ export async function askAssistant(prompt, messageHistory = []) {
         description: true,
         category: true,
         type: true,
+        isRecurring: true,
+        recurringInterval: true,
+        nextRecurringDate: true,
+        status: true,
+        account: {
+          select: { name: true },
+        },
       },
     });
 
-    // Format transactions for the prompt
-    const contextStr = transactions
-      .map(
-        (t) =>
-          `[${t.date.toISOString().split("T")[0]}] ${t.type}: $${t.amount} - ${
-            t.category
-          } (${t.description || "No description"})`
-      )
-      .join("\n");
+    // --- Build structured context for the AI ---
+
+    // Accounts overview
+    const accountsStr = accounts.length
+      ? accounts
+          .map(
+            (a) =>
+              `- ${a.name} (${a.type}): Balance $${a.balance}${a.isDefault ? " [DEFAULT]" : ""}`
+          )
+          .join("\n")
+      : "No accounts found.";
+
+    // Budget overview
+    const currentSpending = monthlyExpenses._sum.amount
+      ? Number(monthlyExpenses._sum.amount)
+      : 0;
+    const budgetStr = budget
+      ? `Monthly Budget: $${budget.amount} | Spent this month: $${currentSpending} | Remaining: $${Number(budget.amount) - currentSpending}`
+      : "No budget has been set.";
+
+    // Transactions with full context
+    const transactionsStr = transactions.length
+      ? transactions
+          .map((t) => {
+            let line = `[${t.date.toISOString().split("T")[0]}] ${t.type}: $${t.amount} - ${t.category} (${t.description || "No description"}) | Account: ${t.account.name}`;
+            if (t.isRecurring) {
+              line += ` | Recurring: ${t.recurringInterval}`;
+              if (t.nextRecurringDate) {
+                line += `, next: ${t.nextRecurringDate.toISOString().split("T")[0]}`;
+              }
+            }
+            if (t.status !== "COMPLETED") {
+              line += ` | Status: ${t.status}`;
+            }
+            return line;
+          })
+          .join("\n")
+      : "No recent transactions found.";
 
     const systemPrompt = `
-      You are a helpful, professional, and friendly AI financial assistant for the "Budgetly" finance platform.
-      You have access to the user's recent financial transactions.
-      
-      Here is the user's recent transaction history (up to 100 latest transactions):
-      ${contextStr || "No recent transactions found."}
+You are a helpful, professional, and friendly AI financial assistant for the "Budgetly" finance platform.
+You have full access to the user's financial data including their accounts, budget, and recent transactions.
 
-      User Query: "${prompt}"
+=== USER'S ACCOUNTS ===
+${accountsStr}
 
-      Answer the user's query based ONLY on the provided transaction history and general financial knowledge.
-      If the user asks about something not in the transaction history, kindly inform them you don't have that specific data, but you can see their recent transactions.
-      Keep your responses concise, clear, and actionable. Format your response in plain text or simple markdown.
-      
-      Previous conversation context:
-      ${messageHistory.map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`).join('\n')}
+=== BUDGET STATUS ===
+${budgetStr}
+
+=== RECENT TRANSACTIONS (up to 100 latest) ===
+${transactionsStr}
+
+=== USER QUERY ===
+"${prompt}"
+
+=== INSTRUCTIONS ===
+- Answer the user's query based on ALL the provided financial data and general financial knowledge.
+- You can answer questions about specific accounts by name, budget status, recurring expenses, and transaction history.
+- If the user refers to an account by name, match it to the accounts listed above.
+- Keep your responses concise, clear, and actionable. Format your response in plain text or simple markdown.
+- If the user asks about data you truly don't have, let them know what information IS available to you.
+
+Previous conversation context:
+${messageHistory.map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`).join("\n")}
     `;
 
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const result = await model.generateContent(systemPrompt);
     const response = await result.response;
-    
+
     return { success: true, text: response.text() };
   } catch (error) {
     console.error("AI Assistant Error:", error);
-    return { success: false, error: "Failed to generate response. Please try again." };
+    return {
+      success: false,
+      error: "Failed to generate response. Please try again.",
+    };
   }
 }
+
