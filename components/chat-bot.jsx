@@ -77,7 +77,7 @@ export const ChatBot = () => {
             </Button>
           </CardHeader>
           
-          <CardContent className="flex-1 p-4 overflow-hidden flex flex-col bg-slate-50">
+          <CardContent className="flex-1 p-4 overflow-hidden flex flex-col bg-muted">
             <ScrollArea className="flex-1 pr-4" ref={scrollRef}>
               <div className="flex flex-col gap-4">
                 {messages.map((msg, idx) => (
@@ -89,7 +89,7 @@ export const ChatBot = () => {
                   >
                     <div
                       className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${
-                        msg.role === "user" ? "bg-blue-600 text-white" : "bg-white border text-blue-600"
+                        msg.role === "user" ? "bg-blue-600 text-white" : "bg-card border text-blue-600"
                       }`}
                     >
                       {msg.role === "user" ? <User size={14} /> : <Bot size={14} />}
@@ -98,13 +98,13 @@ export const ChatBot = () => {
                       className={`p-3 rounded-2xl text-sm shadow-sm ${
                         msg.role === "user"
                           ? "bg-blue-600 text-white rounded-tr-sm"
-                          : "bg-white border rounded-tl-sm text-slate-700"
+                          : "bg-card border rounded-tl-sm text-card-foreground"
                       }`}
                     >
                       {msg.role === "user" ? (
                         msg.content
                       ) : (
-                        <div className="prose prose-sm prose-slate max-w-none">
+                        <div className="prose prose-sm prose-slate dark:prose-invert max-w-none">
                           <ReactMarkdown>{msg.content}</ReactMarkdown>
                         </div>
                       )}
@@ -114,13 +114,13 @@ export const ChatBot = () => {
                 
                 {isLoading && (
                   <div className="flex items-start gap-2 mr-auto max-w-[85%]">
-                    <div className="flex-shrink-0 h-8 w-8 rounded-full bg-white border text-blue-600 flex items-center justify-center">
+                    <div className="flex-shrink-0 h-8 w-8 rounded-full bg-card border text-blue-600 flex items-center justify-center">
                       <Bot size={14} />
                     </div>
-                    <div className="p-3 bg-white border rounded-2xl rounded-tl-sm text-sm text-slate-500 shadow-sm flex gap-1 items-center">
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce"></span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: "0.2s" }}></span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: "0.4s" }}></span>
+                    <div className="p-3 bg-card border rounded-2xl rounded-tl-sm text-sm text-muted-foreground shadow-sm flex gap-1 items-center">
+                      <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce"></span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "0.2s" }}></span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "0.4s" }}></span>
                     </div>
                   </div>
                 )}
@@ -128,7 +128,7 @@ export const ChatBot = () => {
             </ScrollArea>
           </CardContent>
 
-          <CardFooter className="p-3 bg-white border-t rounded-b-xl">
+          <CardFooter className="p-3 bg-card border-t rounded-b-xl">
             <form onSubmit={handleSend} className="w-full flex items-center gap-2">
               <Input
                 value={input}

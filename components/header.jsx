@@ -1,16 +1,23 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import { Button } from "./ui/button";
-import { PenBox, LayoutDashboard } from "lucide-react";
+import { PenBox, LayoutDashboard, Moon, Sun } from "lucide-react";
 import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
-import { checkUser } from "@/lib/checkUser";
 import Image from "next/image";
+import { useTheme } from "next-themes";
 
-const Header = async () => {
-  await checkUser();
+const Header = () => {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
-    <header className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b">
+    <header className="fixed top-0 w-full bg-background/80 backdrop-blur-md z-50 border-b">
       <nav className="container mx-auto px-4 py-4 flex items-center justify-between">
         <Link href="/">
           <Image
@@ -25,7 +32,7 @@ const Header = async () => {
         {/* Navigation Links - Different for signed in/out users */}
         <div className="hidden md:flex items-center space-x-8">
           <SignedOut>
-            <a href="#features" className="text-gray-600 hover:text-blue-600">
+            <a href="#features" className="text-muted-foreground hover:text-blue-600">
               Features
             </a>
           </SignedOut>
@@ -33,10 +40,26 @@ const Header = async () => {
 
         {/* Action Buttons */}
         <div className="flex items-center space-x-4">
+          {/* Theme Toggle */}
+          {mounted && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            >
+              {theme === "dark" ? (
+                <Sun className="h-[1.2rem] w-[1.2rem] transition-all" />
+              ) : (
+                <Moon className="h-[1.2rem] w-[1.2rem] transition-all" />
+              )}
+              <span className="sr-only">Toggle theme</span>
+            </Button>
+          )}
+
           <SignedIn>
             <Link
               href="/dashboard"
-              className="text-gray-600 hover:text-blue-600 flex items-center gap-2"
+              className="text-muted-foreground hover:text-blue-600 flex items-center gap-2"
             >
               <Button variant="outline">
                 <LayoutDashboard size={18} />
@@ -71,3 +94,4 @@ const Header = async () => {
 };
 
 export default Header;
+
