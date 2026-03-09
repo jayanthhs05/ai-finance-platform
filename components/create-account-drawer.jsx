@@ -44,6 +44,7 @@ export function CreateAccountDrawer({ children }) {
       type: "CURRENT",
       balance: "",
       isDefault: false,
+      currency: "USD",
     },
   });
 
@@ -138,6 +139,32 @@ export function CreateAccountDrawer({ children }) {
               />
               {errors.balance && (
                 <p className="text-sm text-red-500">{errors.balance.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label
+                htmlFor="currency"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Currency
+              </label>
+              <Select
+                onValueChange={(value) => setValue("currency", value)}
+                defaultValue={watch("currency")}
+              >
+                <SelectTrigger id="currency">
+                  <SelectValue placeholder="Select currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="USD">USD ($)</SelectItem>
+                  <SelectItem value="EUR">EUR (€)</SelectItem>
+                  <SelectItem value="GBP">GBP (£)</SelectItem>
+                  <SelectItem value="INR">INR (₹)</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.currency && (
+                <p className="text-sm text-red-500">{errors.currency.message}</p>
               )}
             </div>
 

@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { formatCurrency } from "@/lib/utils";
 
 const DATE_RANGES = {
   "7D": { label: "Last 7 Days", days: 7 },
@@ -99,13 +100,13 @@ export function AccountChart({ transactions }) {
           <div className="text-center">
             <p className="text-muted-foreground">Total Income</p>
             <p className="text-lg font-bold text-green-500">
-              ${totals.income.toFixed(2)}
+              {formatCurrency(totals.income, transactions[0]?.currency || "USD")}
             </p>
           </div>
           <div className="text-center">
             <p className="text-muted-foreground">Total Expenses</p>
             <p className="text-lg font-bold text-red-500">
-              ${totals.expense.toFixed(2)}
+              {formatCurrency(totals.expense, transactions[0]?.currency || "USD")}
             </p>
           </div>
           <div className="text-center">
@@ -117,7 +118,7 @@ export function AccountChart({ transactions }) {
                   : "text-red-500"
               }`}
             >
-              ${(totals.income - totals.expense).toFixed(2)}
+              {formatCurrency(totals.income - totals.expense, transactions[0]?.currency || "USD")}
             </p>
           </div>
         </div>
@@ -148,10 +149,10 @@ export function AccountChart({ transactions }) {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => `$${value}`}
+                tickFormatter={(value) => formatCurrency(value, transactions[0]?.currency || "USD")}
               />
               <Tooltip
-                formatter={(value) => [`$${value.toFixed(2)}`, undefined]}
+                formatter={(value) => [formatCurrency(value, transactions[0]?.currency || "USD"), undefined]}
                 contentStyle={{
                   backgroundColor: "hsl(var(--popover))",
                   border: "1px solid hsl(var(--border))",

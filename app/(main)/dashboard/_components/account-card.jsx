@@ -5,6 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useEffect } from "react";
 import useFetch from "@/hooks/use-fetch";
+import { formatCurrency } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -17,7 +18,7 @@ import { updateDefaultAccount } from "@/actions/account";
 import { toast } from "sonner";
 
 export function AccountCard({ account }) {
-  const { name, type, balance, id, isDefault } = account;
+  const { name, type, balance, id, isDefault, currency } = account;
 
   const {
     loading: updateDefaultLoading,
@@ -64,7 +65,7 @@ export function AccountCard({ account }) {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            ${parseFloat(balance).toFixed(2)}
+            {formatCurrency(parseFloat(balance), currency || "USD")}
           </div>
           <p className="text-xs text-muted-foreground">
             {type.charAt(0) + type.slice(1).toLowerCase()} Account

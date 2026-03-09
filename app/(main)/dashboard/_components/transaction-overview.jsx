@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 const EXPENSE_COLORS = [
   "#FF6B6B",
@@ -51,6 +51,9 @@ export function DashboardOverview({ accounts, transactions }) {
   const accountTransactions = transactions.filter(
     (t) => t.accountId === selectedAccountId
   );
+  
+  const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
+  const currency = selectedAccount?.currency || "USD";
 
   // Get recent transactions (last 5)
   const recentTransactions = accountTransactions
@@ -172,7 +175,7 @@ export function DashboardOverview({ accounts, transactions }) {
                       ) : (
                         <ArrowUpRight className="mr-1 h-4 w-4" />
                       )}
-                      ${transaction.amount.toFixed(2)}
+                      {formatCurrency(transaction.amount, transaction.currency || currency)}
                     </div>
                   </div>
                 </div>
@@ -205,7 +208,7 @@ export function DashboardOverview({ accounts, transactions }) {
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
-                    label={({ name, value }) => `${name}: $${value.toFixed(2)}`}
+                    label={({ name, value }) => `${name}: ${formatCurrency(value, currency)}`}
                   >
                     {expensePieData.map((entry, index) => (
                       <Cell
@@ -215,7 +218,7 @@ export function DashboardOverview({ accounts, transactions }) {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value) => `$${value.toFixed(2)}`}
+                    formatter={(value) => formatCurrency(value, currency)}
                     contentStyle={{
                       backgroundColor: "hsl(var(--popover))",
                       border: "1px solid hsl(var(--border))",
@@ -254,7 +257,7 @@ export function DashboardOverview({ accounts, transactions }) {
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
-                    label={({ name, value }) => `${name}: $${value.toFixed(2)}`}
+                    label={({ name, value }) => `${name}: ${formatCurrency(value, currency)}`}
                   >
                     {incomePieData.map((entry, index) => (
                       <Cell
@@ -264,7 +267,7 @@ export function DashboardOverview({ accounts, transactions }) {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value) => `$${value.toFixed(2)}`}
+                    formatter={(value) => formatCurrency(value, currency)}
                     contentStyle={{
                       backgroundColor: "hsl(var(--popover))",
                       border: "1px solid hsl(var(--border))",

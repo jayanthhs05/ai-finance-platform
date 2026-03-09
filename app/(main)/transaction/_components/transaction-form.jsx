@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { CreateAccountDrawer } from "@/components/create-account-drawer";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { createTransaction, updateTransaction } from "@/actions/transaction";
 import { transactionSchema } from "@/app/lib/schema";
 import { ReceiptScanner } from "./recipt-scanner";
@@ -82,9 +82,11 @@ export function AddTransactionForm({
   } = useFetch(editMode ? updateTransaction : createTransaction);
 
   const onSubmit = (data) => {
+    const selectedAccount = accounts.find((a) => a.id === data.accountId);
     const formData = {
       ...data,
       amount: parseFloat(data.amount),
+      currency: selectedAccount?.currency || "USD",
     };
 
     if (editMode) {
@@ -180,7 +182,7 @@ export function AddTransactionForm({
             <SelectContent>
               {accounts.map((account) => (
                 <SelectItem key={account.id} value={account.id}>
-                  {account.name} (${parseFloat(account.balance).toFixed(2)})
+                  {account.name} ({formatCurrency(parseFloat(account.balance), account.currency || "USD")})
                 </SelectItem>
               ))}
               <CreateAccountDrawer>
