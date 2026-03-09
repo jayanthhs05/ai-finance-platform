@@ -7,6 +7,7 @@ import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import Image from "next/image";
 import { useTheme } from "next-themes";
+import { dark } from "@clerk/themes";
 
 const Header = () => {
   const { theme, setTheme } = useTheme();
@@ -25,7 +26,7 @@ const Header = () => {
             alt="Budgetly Logo"
             width={200}
             height={60}
-            className="h-12 w-auto object-contain"
+            className="h-12 w-auto object-contain theme-logo dark:invert dark:brightness-0"
           />
         </Link>
 
@@ -81,6 +82,7 @@ const Header = () => {
           <SignedIn>
             <UserButton
               appearance={{
+                baseTheme: theme === "dark" ? dark : undefined,
                 elements: {
                   avatarBox: "w-10 h-10",
                 },
