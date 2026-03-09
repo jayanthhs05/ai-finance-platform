@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from "react";
 import {
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -123,10 +123,20 @@ export function AccountChart({ transactions }) {
         </div>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart
+            <AreaChart
               data={filteredData}
               margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
             >
+              <defs>
+                <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="date"
@@ -141,7 +151,7 @@ export function AccountChart({ transactions }) {
                 tickFormatter={(value) => `$${value}`}
               />
               <Tooltip
-                formatter={(value) => [`$${value}`, undefined]}
+                formatter={(value) => [`$${value.toFixed(2)}`, undefined]}
                 contentStyle={{
                   backgroundColor: "hsl(var(--popover))",
                   border: "1px solid hsl(var(--border))",
@@ -149,22 +159,27 @@ export function AccountChart({ transactions }) {
                 }}
               />
               <Legend />
-              <Bar
+              <Area
+                type="monotone"
                 dataKey="income"
                 name="Income"
-                fill="#22c55e"
-                radius={[4, 4, 0, 0]}
+                stroke="#22c55e"
+                strokeWidth={2}
+                fill="url(#incomeGradient)"
               />
-              <Bar
+              <Area
+                type="monotone"
                 dataKey="expense"
                 name="Expense"
-                fill="#ef4444"
-                radius={[4, 4, 0, 0]}
+                stroke="#ef4444"
+                strokeWidth={2}
+                fill="url(#expenseGradient)"
               />
-            </BarChart>
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       </CardContent>
     </Card>
   );
 }
+

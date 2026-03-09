@@ -22,7 +22,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-const COLORS = [
+const EXPENSE_COLORS = [
   "#FF6B6B",
   "#4ECDC4",
   "#45B7D1",
@@ -30,6 +30,16 @@ const COLORS = [
   "#FFEEAD",
   "#D4A5A5",
   "#9FA8DA",
+];
+
+const INCOME_COLORS = [
+  "#22c55e",
+  "#3b82f6",
+  "#f59e0b",
+  "#8b5cf6",
+  "#06b6d4",
+  "#ec4899",
+  "#f97316",
 ];
 
 export function DashboardOverview({ accounts, transactions }) {
@@ -47,12 +57,23 @@ export function DashboardOverview({ accounts, transactions }) {
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(0, 5);
 
-  // Calculate expense breakdown for current month
   const currentDate = new Date();
+
+  // Calculate expense breakdown for current month
   const currentMonthExpenses = accountTransactions.filter((t) => {
     const transactionDate = new Date(t.date);
     return (
       t.type === "EXPENSE" &&
+      transactionDate.getMonth() === currentDate.getMonth() &&
+      transactionDate.getFullYear() === currentDate.getFullYear()
+    );
+  });
+
+  // Calculate income breakdown for current month
+  const currentMonthIncome = accountTransactions.filter((t) => {
+    const transactionDate = new Date(t.date);
+    return (
+      t.type === "INCOME" &&
       transactionDate.getMonth() === currentDate.getMonth() &&
       transactionDate.getFullYear() === currentDate.getFullYear()
     );
@@ -68,8 +89,25 @@ export function DashboardOverview({ accounts, transactions }) {
     return acc;
   }, {});
 
-  // Format data for pie chart
-  const pieChartData = Object.entries(expensesByCategory).map(
+  // Group income by category
+  const incomeByCategory = currentMonthIncome.reduce((acc, transaction) => {
+    const category = transaction.category;
+    if (!acc[category]) {
+      acc[category] = 0;
+    }
+    acc[category] += transaction.amount;
+    return acc;
+  }, {});
+
+  // Format data for pie charts
+  const expensePieData = Object.entries(expensesByCategory).map(
+    ([category, amount]) => ({
+      name: category,
+      value: amount,
+    })
+  );
+
+  const incomePieData = Object.entries(incomeByCategory).map(
     ([category, amount]) => ({
       name: category,
       value: amount,
@@ -77,7 +115,7 @@ export function DashboardOverview({ accounts, transactions }) {
   );
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {/* Recent Transactions Card */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
@@ -88,7 +126,7 @@ export function DashboardOverview({ accounts, transactions }) {
             value={selectedAccountId}
             onValueChange={setSelectedAccountId}
           >
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-auto min-w-[140px]">
               <SelectValue placeholder="Select account" />
             </SelectTrigger>
             <SelectContent>
@@ -152,7 +190,7 @@ export function DashboardOverview({ accounts, transactions }) {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0 pb-5">
-          {pieChartData.length === 0 ? (
+          {expensePieData.length === 0 ? (
             <p className="text-center text-muted-foreground py-4">
               No expenses this month
             </p>
@@ -161,7 +199,7 @@ export function DashboardOverview({ accounts, transactions }) {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={pieChartData}
+                    data={expensePieData}
                     cx="50%"
                     cy="50%"
                     outerRadius={80}
@@ -169,10 +207,58 @@ export function DashboardOverview({ accounts, transactions }) {
                     dataKey="value"
                     label={({ name, value }) => `${name}: $${value.toFixed(2)}`}
                   >
-                    {pieChartData.map((entry, index) => (
+                    {expensePieData.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
+                        fill={EXPENSE_COLORS[index % EXPENSE_COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value) => `$${value.toFixed(2)}`}
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--popover))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "var(--radius)",
+                    }}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Income Breakdown Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base font-normal">
+            Monthly Income Breakdown
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0 pb-5">
+          {incomePieData.length === 0 ? (
+            <p className="text-center text-muted-foreground py-4">
+              No income this month
+            </p>
+          ) : (
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={incomePieData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, value }) => `${name}: $${value.toFixed(2)}`}
+                  >
+                    {incomePieData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={INCOME_COLORS[index % INCOME_COLORS.length]}
                       />
                     ))}
                   </Pie>
@@ -194,3 +280,4 @@ export function DashboardOverview({ accounts, transactions }) {
     </div>
   );
 }
+
