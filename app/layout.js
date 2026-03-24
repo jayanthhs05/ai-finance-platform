@@ -5,6 +5,8 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
 import { ChatBot } from "@/components/chat-bot";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ShortcutProvider } from "@/components/shortcut-provider";
+import { OnboardingDialog } from "@/components/onboarding-dialog";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -27,10 +29,13 @@ export default function RootLayout({ children }) {
             enableSystem
             disableTransitionOnChange
           >
-            <Header />
-            <main className="min-h-screen">{children}</main>
-            <Toaster richColors />
-            <ChatBot />
+            <ShortcutProvider>
+              <Header />
+              <main className="min-h-screen">{children}</main>
+              <Toaster richColors />
+              <OnboardingDialog />
+              <ChatBot />
+            </ShortcutProvider>
           </ThemeProvider>
         </body>
       </html>

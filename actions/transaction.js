@@ -230,6 +230,30 @@ export async function getUserTransactions(query = {}) {
 // Scan Receipt
 export async function scanReceipt(file) {
   try {
+    const { userId } = await auth();
+    let historyContext = "";
+
+    if (userId) {
+      const user = await db.user.findUnique({
+        where: { clerkUserId: userId },
+      });
+      if (user) {
+        const pastTransactions = await db.transaction.findMany({
+          where: { userId: user.id },
+          select: { description: true, category: true },
+          take: 50,
+          orderBy: { date: "desc" },
+        });
+        if (pastTransactions.length > 0) {
+          const mapping = pastTransactions
+            .filter((t) => t.description)
+            .map((t) => `"${t.description}": ${t.category}`)
+            .join(", ");
+          historyContext = `Take into account the user's past categorization preferences: ${mapping}. If the merchant or description closely matches a past entry, prioritize that category.`;
+        }
+      }
+    }
+
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     // Convert File to ArrayBuffer
@@ -246,6 +270,8 @@ export async function scanReceipt(file) {
       - Suggested category (one of: housing, transportation, groceries, utilities, entertainment, food, shopping, healthcare, education, personal, travel, insurance, gifts, bills, other-expense, salary, freelance, investments, business, rental, other-income) - return the EXACT category ID from this list.
       - Type (INCOME or EXPENSE) - If its an earnings statement or salary slip, its INCOME. Default to EXPENSE if not sure.
       
+      ${historyContext}
+
       Only respond with valid JSON in this exact format:
       {
         "amount": number,
@@ -299,6 +325,27 @@ export async function parseNLTransaction(prompt) {
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthorized");
 
+    const user = await db.user.findUnique({
+      where: { clerkUserId: userId },
+    });
+
+    let historyContext = "";
+    if (user) {
+      const pastTransactions = await db.transaction.findMany({
+        where: { userId: user.id },
+        select: { description: true, category: true },
+        take: 50,
+        orderBy: { date: "desc" },
+      });
+      if (pastTransactions.length > 0) {
+        const mapping = pastTransactions
+          .filter((t) => t.description)
+          .map((t) => `"${t.description}": ${t.category}`)
+          .join(", ");
+        historyContext = `CRITICAL Context - User's past categorizations: ${mapping}. Prioritize these categories if descriptions match.`;
+      }
+    }
+
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const systemPrompt = `
@@ -314,6 +361,8 @@ export async function parseNLTransaction(prompt) {
 
       If the user says "I spent", "I paid", "bought", etc. - it's an EXPENSE.
       If the user says "I received", "earned", "salary", etc. - it's an INCOME.
+      
+      ${historyContext}
 
       Today's date is ${new Date().toISOString().split("T")[0]}.
 
@@ -398,11 +447,36 @@ export async function getTransactionsSummary(range) {
 // Get Category Recommendation
 export async function getCategoryRecommendation(description) {
   try {
+    const { userId } = await auth();
+    let historyContext = "";
+
+    if (userId) {
+      const user = await db.user.findUnique({
+        where: { clerkUserId: userId },
+      });
+      if (user) {
+        const pastTransactions = await db.transaction.findMany({
+          where: { userId: user.id },
+          select: { description: true, category: true },
+          take: 50,
+          orderBy: { date: "desc" },
+        });
+        if (pastTransactions.length > 0) {
+          const mapping = pastTransactions
+            .filter((t) => t.description)
+            .map((t) => `"${t.description}": ${t.category}`)
+            .join(", ");
+          historyContext = `Take into account the user's past categorization mapping: ${mapping}. If the description closely matches a past entry, prioritize that category!`;
+        }
+      }
+    }
+
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `
       Suggest a category for this transaction description: "${description}"
       Choose from: housing, transportation, groceries, utilities, entertainment, food, shopping, healthcare, education, personal, travel, insurance, gifts, bills, other-expense, salary, freelance, investments, business, rental, other-income.
+      ${historyContext}
       Only respond with the category name, nothing else.
       If unsure, return "other-expense".
     `;

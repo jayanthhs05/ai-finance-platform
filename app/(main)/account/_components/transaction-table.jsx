@@ -51,6 +51,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn, formatCurrency } from "@/lib/utils";
 import { categoryColors, defaultCategories } from "@/data/categories";
 import { bulkDeleteTransactions } from "@/actions/account";
+import { createTransaction } from "@/actions/transaction";
 import useFetch from "@/hooks/use-fetch";
 import { BarLoader } from "react-spinners";
 import { useRouter } from "next/navigation";
@@ -196,6 +197,8 @@ export function TransactionTable({ transactions }) {
     data: deleted,
   } = useFetch(bulkDeleteTransactions);
 
+  const { loading: createLoading, fn: createFn } = useFetch(createTransaction);
+
   const handleBulkDelete = async () => {
     if (
       !window.confirm(
@@ -204,11 +207,50 @@ export function TransactionTable({ transactions }) {
     )
       return;
 
+    const transactionsToDelete = paginatedTransactions.filter((t) =>
+      selectedIds.includes(t.id)
+    );
+
     toast.promise(deleteFn(selectedIds), {
       loading: "Deleting transactions...",
-      success: "Transactions deleted successfully",
+      success: () => {
+        return "Transactions deleted successfully";
+      },
       error: "Failed to delete transactions",
     });
+  };
+
+  const handleSingleDelete = async (transaction) => {
+    try {
+      await deleteFn([transaction.id]);
+      toast.success("Transaction deleted", {
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            const payload = {
+              type: transaction.type,
+              amount: transaction.amount,
+              description: transaction.description,
+              date: new Date(transaction.date),
+              category: transaction.category,
+              accountId: transaction.accountId,
+              isRecurring: transaction.isRecurring,
+              recurringInterval: transaction.recurringInterval,
+            };
+            try {
+              toast.loading("Restoring...", { id: `restore-${transaction.id}` });
+              await createFn(payload);
+              toast.success("Transaction restored!", { id: `restore-${transaction.id}` });
+            } catch (err) {
+              toast.error("Failed to restore transaction", { id: `restore-${transaction.id}` });
+            }
+          },
+        },
+        duration: 5000,
+      });
+    } catch (error) {
+      toast.error("Failed to delete transaction");
+    }
   };
 
   const handleClearFilters = () => {
@@ -502,7 +544,7 @@ export function TransactionTable({ transactions }) {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           className="text-destructive"
-                          onClick={() => deleteFn([transaction.id])}
+                          onClick={() => handleSingleDelete(transaction)}
                         >
                           Delete
                         </DropdownMenuItem>

@@ -30,6 +30,12 @@ export const ChatBot = () => {
     }
   }, [messages, isOpen]);
 
+  useEffect(() => {
+    const handleOpenChat = () => setIsOpen(true);
+    window.addEventListener("open-chat-bot", handleOpenChat);
+    return () => window.removeEventListener("open-chat-bot", handleOpenChat);
+  }, []);
+
   const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;

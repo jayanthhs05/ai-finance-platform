@@ -73,6 +73,9 @@ html {
   body {
     @apply bg-background text-foreground;
   }
+  a, button, input, select, textarea, [role="button"], [role="dialog"] {
+    @apply transition-all duration-300 ease-in-out;
+  }
 }
 
 @layer utilities {

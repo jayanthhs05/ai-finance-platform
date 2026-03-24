@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Pencil, Check, X } from "lucide-react";
+import { Pencil, Check, X, Sparkles } from "lucide-react";
 import useFetch from "@/hooks/use-fetch";
 import { toast } from "sonner";
 
@@ -16,6 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { updateBudget } from "@/actions/budget";
+import { optimizeBudget } from "@/actions/optimize";
 import { formatCurrency } from "@/lib/utils";
 
 export function BudgetProgress({ initialBudget, currentExpenses }) {
@@ -30,6 +31,11 @@ export function BudgetProgress({ initialBudget, currentExpenses }) {
     data: updatedBudget,
     error,
   } = useFetch(updateBudget);
+
+  const {
+    loading: isOptimizing,
+    fn: optimizeFn,
+  } = useFetch(optimizeBudget);
 
   const percentUsed = initialBudget
     ? (currentExpenses / initialBudget.amount) * 100
@@ -108,6 +114,26 @@ export function BudgetProgress({ initialBudget, currentExpenses }) {
                   className="h-6 w-6"
                 >
                   <Pencil className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    toast.promise(optimizeFn(), {
+                      loading: "Optimizing based on your history...",
+                      success: (res) => {
+                        setNewBudget(res.amount.toString());
+                        setIsEditing(true);
+                        return res.reason;
+                      },
+                      error: "Optimization failed",
+                    });
+                  }}
+                  disabled={isOptimizing}
+                  className="ml-2 h-7 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition duration-300"
+                >
+                  <Sparkles className="h-3.5 w-3.5 mr-1" />
+                  Optimize
                 </Button>
               </>
             )}
