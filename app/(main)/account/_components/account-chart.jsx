@@ -100,13 +100,13 @@ export function AccountChart({ transactions }) {
           <div className="text-center">
             <p className="text-muted-foreground">Total Income</p>
             <p className="text-lg font-bold text-green-500">
-              {formatCurrency(totals.income, transactions[0]?.currency || "USD")}
+              {formatCurrency(totals.income, transactions[0]?.currency || "INR")}
             </p>
           </div>
           <div className="text-center">
             <p className="text-muted-foreground">Total Expenses</p>
             <p className="text-lg font-bold text-red-500">
-              {formatCurrency(totals.expense, transactions[0]?.currency || "USD")}
+              {formatCurrency(totals.expense, transactions[0]?.currency || "INR")}
             </p>
           </div>
           <div className="text-center">
@@ -118,7 +118,7 @@ export function AccountChart({ transactions }) {
                   : "text-red-500"
               }`}
             >
-              {formatCurrency(totals.income - totals.expense, transactions[0]?.currency || "USD")}
+              {formatCurrency(totals.income - totals.expense, transactions[0]?.currency || "INR")}
             </p>
           </div>
         </div>
@@ -149,10 +149,10 @@ export function AccountChart({ transactions }) {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => formatCurrency(value, transactions[0]?.currency || "USD")}
+                tickFormatter={(value) => formatCurrency(value, transactions[0]?.currency || "INR")}
               />
               <Tooltip
-                formatter={(value) => [formatCurrency(value, transactions[0]?.currency || "USD"), undefined]}
+                formatter={(value) => [formatCurrency(value, transactions[0]?.currency || "INR"), undefined]}
                 contentStyle={{
                   backgroundColor: "hsl(var(--popover))",
                   border: "1px solid hsl(var(--border))",

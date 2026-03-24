@@ -43,26 +43,20 @@ export function BudgetProgress({ initialBudget, currentExpenses }) {
       return;
     }
 
-    await updateBudgetFn(amount);
+    toast.promise(updateBudgetFn(amount), {
+      loading: "Updating budget...",
+      success: () => {
+        setIsEditing(false);
+        return "Budget updated successfully";
+      },
+      error: (err) => err.message || "Failed to update budget",
+    });
   };
 
   const handleCancel = () => {
     setNewBudget(initialBudget?.amount?.toString() || "");
     setIsEditing(false);
   };
-
-  useEffect(() => {
-    if (updatedBudget?.success) {
-      setIsEditing(false);
-      toast.success("Budget updated successfully");
-    }
-  }, [updatedBudget]);
-
-  useEffect(() => {
-    if (error) {
-      toast.error(error.message || "Failed to update budget");
-    }
-  }, [error]);
 
   return (
     <Card>
@@ -104,7 +98,7 @@ export function BudgetProgress({ initialBudget, currentExpenses }) {
               <>
                 <CardDescription>
                   {initialBudget
-                    ? `${formatCurrency(currentExpenses, initialBudget.currency || "USD")} of ${formatCurrency(initialBudget.amount, initialBudget.currency || "USD")} spent`
+                    ? `${formatCurrency(currentExpenses, initialBudget.currency || "INR")} of ${formatCurrency(initialBudget.amount, initialBudget.currency || "INR")} spent`
                     : "No budget set"}
                 </CardDescription>
                 <Button

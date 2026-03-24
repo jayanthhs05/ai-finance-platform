@@ -56,22 +56,17 @@ export function CreateAccountDrawer({ children }) {
   } = useFetch(createAccount);
 
   const onSubmit = async (data) => {
-    await createAccountFn(data);
+    toast.promise(createAccountFn(data), {
+      loading: "Creating account...",
+      success: () => {
+        reset();
+        setOpen(false);
+        return "Account created successfully";
+      },
+      error: (err) => err.message || "Failed to create account",
+    });
   };
 
-  useEffect(() => {
-    if (newAccount) {
-      toast.success("Account created successfully");
-      reset();
-      setOpen(false);
-    }
-  }, [newAccount, reset]);
-
-  useEffect(() => {
-    if (error) {
-      toast.error(error.message || "Failed to create account");
-    }
-  }, [error]);
 
   return (
     <Drawer open={open} onOpenChange={setOpen}>

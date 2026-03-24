@@ -31,7 +31,7 @@ export default async function AccountPage({ params }) {
 
         <div className="text-right pb-2">
           <div className="text-xl sm:text-2xl font-bold">
-            {formatCurrency(parseFloat(account.balance), account.currency || "USD")}
+            {formatCurrency(parseFloat(account.balance), account.currency || "INR")}
           </div>
           <p className="text-sm text-muted-foreground">
             {account._count.transactions} Transactions

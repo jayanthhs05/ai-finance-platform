@@ -22,13 +22,16 @@ export function ReceiptScanner({ onScanComplete }) {
       return;
     }
 
-    await scanReceiptFn(file);
+    toast.promise(scanReceiptFn(file), {
+      loading: "Scanning receipt...",
+      success: "Receipt scanned successfully",
+      error: "Failed to scan receipt",
+    });
   };
 
   useEffect(() => {
     if (scannedData && !scanReceiptLoading) {
       onScanComplete(scannedData);
-      toast.success("Receipt scanned successfully");
     }
   }, [scanReceiptLoading, scannedData]);
 

@@ -6,6 +6,7 @@ import { MessageCircle, X, Send, Bot, User } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "./ui/card";
 import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
+import { cn, formatCurrency } from "@/lib/utils";
 import { askAssistant } from "@/actions/chat";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
@@ -58,107 +59,135 @@ export const ChatBot = () => {
     }
   };
 
+
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <>
+      {/* Floating Action Button */}
+      {!isOpen && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <Button
+            onClick={() => setIsOpen(true)}
+            className="rounded-full h-14 w-14 shadow-xl bg-blue-600 hover:bg-blue-700 transition-all hover:scale-105"
+          >
+            <MessageCircle className="h-6 w-6" />
+          </Button>
+        </div>
+      )}
+
+      {/* Sidebar Overlay */}
       {isOpen && (
-        <Card className="w-[350px] sm:w-[400px] h-[500px] mb-4 shadow-2xl flex flex-col border-blue-100">
-          <CardHeader className="bg-blue-600 text-white flex flex-row items-center justify-between py-3 rounded-t-xl">
+        <div 
+          className="fixed inset-0 bg-black/20 z-40 backdrop-blur-sm transition-opacity"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* Sidebar ChatBot */}
+      <div 
+        className={cn(
+          "fixed top-0 right-0 h-full w-[400px] max-w-[90vw] bg-background z-50 shadow-2xl transition-transform duration-300 ease-in-out transform border-l",
+          isOpen ? "translate-x-0" : "translate-x-full"
+        )}
+      >
+        <div className="flex flex-col h-full">
+          <div className="bg-blue-600 text-white p-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Bot className="h-5 w-5" />
-              <CardTitle className="text-md font-medium">Budgetly UI Assistant</CardTitle>
+              <Bot className="h-6 w-6" />
+              <div>
+                <h3 className="font-semibold">Budgetly AI Assistant</h3>
+                <p className="text-[10px] text-blue-100 flex items-center">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 mr-1 animate-pulse" />
+                  Online
+                </p>
+              </div>
             </div>
             <Button
               variant="ghost"
               size="icon"
-              className="text-white hover:bg-blue-700 hover:text-white rounded-full h-8 w-8"
+              className="text-white hover:bg-blue-700 rounded-full h-8 w-8"
               onClick={() => setIsOpen(false)}
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5" />
             </Button>
-          </CardHeader>
+          </div>
           
-          <CardContent className="flex-1 p-4 overflow-hidden flex flex-col bg-muted">
-            <ScrollArea className="flex-1 pr-4" ref={scrollRef}>
-              <div className="flex flex-col gap-4">
-                {messages.map((msg, idx) => (
+          <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+            <div className="flex flex-col gap-6">
+              {messages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`flex items-start gap-3 ${
+                    msg.role === "user" ? "flex-row-reverse" : ""
+                  }`}
+                >
                   <div
-                    key={idx}
-                    className={`flex items-start gap-2 max-w-[85%] ${
-                      msg.role === "user" ? "ml-auto flex-row-reverse" : "mr-auto"
-                    }`}
+                    className={cn(
+                      "flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-bold",
+                      msg.role === "user" 
+                        ? "bg-blue-600 text-white" 
+                        : "bg-muted text-blue-600 border border-blue-100"
+                    )}
                   >
-                    <div
-                      className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${
-                        msg.role === "user" ? "bg-blue-600 text-white" : "bg-card border text-blue-600"
-                      }`}
-                    >
-                      {msg.role === "user" ? <User size={14} /> : <Bot size={14} />}
-                    </div>
-                    <div
-                      className={`p-3 rounded-2xl text-sm shadow-sm ${
-                        msg.role === "user"
-                          ? "bg-blue-600 text-white rounded-tr-sm"
-                          : "bg-card border rounded-tl-sm text-card-foreground"
-                      }`}
-                    >
-                      {msg.role === "user" ? (
-                        msg.content
-                      ) : (
-                        <div className="prose prose-sm prose-slate dark:prose-invert max-w-none">
-                          <ReactMarkdown>{msg.content}</ReactMarkdown>
-                        </div>
-                      )}
-                    </div>
+                    {msg.role === "user" ? <User size={14} /> : <Bot size={14} />}
                   </div>
-                ))}
-                
-                {isLoading && (
-                  <div className="flex items-start gap-2 mr-auto max-w-[85%]">
-                    <div className="flex-shrink-0 h-8 w-8 rounded-full bg-card border text-blue-600 flex items-center justify-center">
-                      <Bot size={14} />
-                    </div>
-                    <div className="p-3 bg-card border rounded-2xl rounded-tl-sm text-sm text-muted-foreground shadow-sm flex gap-1 items-center">
-                      <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce"></span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "0.2s" }}></span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "0.4s" }}></span>
-                    </div>
+                  <div
+                    className={cn(
+                      "p-3 rounded-2xl text-sm max-w-[85%]",
+                      msg.role === "user"
+                        ? "bg-blue-600 text-white rounded-tr-none shadow-md"
+                        : "bg-muted rounded-tl-none text-foreground border border-blue-50"
+                    )}
+                  >
+                    {msg.role === "user" ? (
+                      msg.content
+                    ) : (
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </ScrollArea>
-          </CardContent>
+                </div>
+              ))}
+              
+              {isLoading && (
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 h-8 w-8 rounded-full bg-muted border border-blue-100 text-blue-600 flex items-center justify-center">
+                    <Bot size={14} />
+                  </div>
+                  <div className="p-3 bg-muted border border-blue-50 rounded-2xl rounded-tl-none text-sm text-muted-foreground shadow-sm flex gap-1 items-center">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: "0.2s" }}></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: "0.4s" }}></span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
 
-          <CardFooter className="p-3 bg-card border-t rounded-b-xl">
-            <form onSubmit={handleSend} className="w-full flex items-center gap-2">
+          <div className="p-4 border-t bg-muted/30">
+            <form onSubmit={handleSend} className="relative">
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about your finances..."
-                className="flex-1 focus-visible:ring-blue-600"
+                placeholder="Ask your assistant..."
+                className="pr-12 py-6 rounded-xl focus-visible:ring-blue-600 border-blue-100 shadow-sm"
                 disabled={isLoading}
               />
               <Button 
                 type="submit" 
                 size="icon" 
                 disabled={!input.trim() || isLoading}
-                className="bg-blue-600 hover:bg-blue-700 shrink-0 rounded-full h-10 w-10"
+                className="absolute right-2 top-2 bg-blue-600 hover:bg-blue-700 rounded-lg h-8 w-8 transition-all"
               >
                 <Send className="h-4 w-4" />
               </Button>
             </form>
-          </CardFooter>
-        </Card>
-      )}
-
-      {/* Floating Action Button */}
-      {!isOpen && (
-        <Button
-          onClick={() => setIsOpen(true)}
-          className="rounded-full h-14 w-14 shadow-xl bg-blue-600 hover:bg-blue-700 transition-all hover:scale-105"
-        >
-          <MessageCircle className="h-6 w-6" />
-        </Button>
-      )}
-    </div>
+            <p className="text-[10px] text-center text-muted-foreground mt-3 uppercase tracking-wider font-semibold">
+              Powered by Google Gemini
+            </p>
+          </div>
+        </div>
+      </div>
+    </>
   );
 };

@@ -13,7 +13,7 @@ import {
   RefreshCw,
   Clock,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, isWithinInterval, startOfMonth, endOfMonth, subDays, startOfYear } from "date-fns";
 import { toast } from "sonner";
 
 import {
@@ -49,7 +49,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { cn, formatCurrency } from "@/lib/utils";
-import { categoryColors } from "@/data/categories";
+import { categoryColors, defaultCategories } from "@/data/categories";
 import { bulkDeleteTransactions } from "@/actions/account";
 import useFetch from "@/hooks/use-fetch";
 import { BarLoader } from "react-spinners";
@@ -73,6 +73,8 @@ export function TransactionTable({ transactions }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [recurringFilter, setRecurringFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const router = useRouter();
 
@@ -99,6 +101,33 @@ export function TransactionTable({ transactions }) {
         if (recurringFilter === "recurring") return transaction.isRecurring;
         return !transaction.isRecurring;
       });
+    }
+
+    // Apply category filter
+    if (categoryFilter) {
+      result = result.filter((transaction) => transaction.category === categoryFilter);
+    }
+
+    // Apply date range filter
+    if (dateFilter) {
+      const now = new Date();
+      let start, end;
+      if (dateFilter === "this-month") {
+        start = startOfMonth(now);
+        end = endOfMonth(now);
+      } else if (dateFilter === "last-30-days") {
+        start = subDays(now, 30);
+        end = now;
+      } else if (dateFilter === "this-year") {
+        start = startOfYear(now);
+        end = now;
+      }
+
+      if (start && end) {
+        result = result.filter((transaction) => 
+          isWithinInterval(new Date(transaction.date), { start, end })
+        );
+      }
     }
 
     // Apply sorting
@@ -175,19 +204,19 @@ export function TransactionTable({ transactions }) {
     )
       return;
 
-    deleteFn(selectedIds);
+    toast.promise(deleteFn(selectedIds), {
+      loading: "Deleting transactions...",
+      success: "Transactions deleted successfully",
+      error: "Failed to delete transactions",
+    });
   };
-
-  useEffect(() => {
-    if (deleted && !deleteLoading) {
-      toast.error("Transactions deleted successfully");
-    }
-  }, [deleted, deleteLoading]);
 
   const handleClearFilters = () => {
     setSearchTerm("");
     setTypeFilter("");
     setRecurringFilter("");
+    setCategoryFilter("");
+    setDateFilter("");
     setCurrentPage(1);
   };
 
@@ -223,7 +252,7 @@ export function TransactionTable({ transactions }) {
               setCurrentPage(1);
             }}
           >
-            <SelectTrigger className="w-[130px]">
+            <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="All Types" />
             </SelectTrigger>
             <SelectContent>
@@ -239,12 +268,48 @@ export function TransactionTable({ transactions }) {
               setCurrentPage(1);
             }}
           >
-            <SelectTrigger className="w-[130px]">
+            <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="All Transactions" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="recurring">Recurring Only</SelectItem>
               <SelectItem value="non-recurring">Non-recurring Only</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={categoryFilter}
+            onValueChange={(value) => {
+              setCategoryFilter(value);
+              setCurrentPage(1);
+            }}
+          >
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              {defaultCategories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={dateFilter}
+            onValueChange={(value) => {
+              setDateFilter(value);
+              setCurrentPage(1);
+            }}
+          >
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="All Time" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="this-month">This Month</SelectItem>
+              <SelectItem value="last-30-days">Last 30 Days</SelectItem>
+              <SelectItem value="this-year">This Year</SelectItem>
             </SelectContent>
           </Select>
 
@@ -262,7 +327,7 @@ export function TransactionTable({ transactions }) {
             </div>
           )}
 
-          {(searchTerm || typeFilter || recurringFilter) && (
+          {(searchTerm || typeFilter || recurringFilter || categoryFilter || dateFilter) && (
             <Button
               variant="outline"
               size="icon"

@@ -28,7 +28,7 @@ model Account {
   name         String
   type         AccountType
   balance      Decimal       @default(0) // will ask inital balance while creating an account
-  currency     String        @default("USD")
+  currency     String        @default("INR")
   isDefault    Boolean       @default(false)
   userId       String
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -44,7 +44,7 @@ model Transaction {
   id                String            @id @default(uuid())
   type             TransactionType
   amount           Decimal
-  currency         String            @default("USD")
+  currency         String            @default("INR")
   description      String?
   date             DateTime
   category         String           
@@ -70,7 +70,7 @@ model Transaction {
 model Budget {
   id          String       @id @default(uuid())
   amount      Decimal
-  currency    String       @default("USD")
+  currency    String       @default("INR")
   lastAlertSent DateTime?  // Track when the last alert was sent
   userId      String       @unique
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)

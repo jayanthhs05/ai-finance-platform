@@ -35,20 +35,12 @@ export function AccountCard({ account }) {
       return; // Don't allow toggling off the default account
     }
 
-    await updateDefaultFn(id);
+    toast.promise(updateDefaultFn(id), {
+      loading: "Updating default account...",
+      success: "Default account updated successfully",
+      error: "Failed to update default account",
+    });
   };
-
-  useEffect(() => {
-    if (updatedAccount?.success) {
-      toast.success("Default account updated successfully");
-    }
-  }, [updatedAccount]);
-
-  useEffect(() => {
-    if (error) {
-      toast.error(error.message || "Failed to update default account");
-    }
-  }, [error]);
 
   return (
     <Card className="hover:shadow-md transition-shadow group relative">
@@ -65,7 +57,7 @@ export function AccountCard({ account }) {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            {formatCurrency(parseFloat(balance), currency || "USD")}
+            {formatCurrency(parseFloat(balance), currency || "INR")}
           </div>
           <p className="text-xs text-muted-foreground">
             {type.charAt(0) + type.slice(1).toLowerCase()} Account

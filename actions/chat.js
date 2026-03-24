@@ -86,7 +86,7 @@ export async function askAssistant(prompt, messageHistory = []) {
       ? accounts
           .map(
             (a) =>
-              `- ${a.name} (${a.type}): Balance $${a.balance}${a.isDefault ? " [DEFAULT]" : ""}`
+              `- ${a.name} (${a.type}): Balance ₹${a.balance}${a.isDefault ? " [DEFAULT]" : ""}`
           )
           .join("\n")
       : "No accounts found.";
@@ -96,14 +96,14 @@ export async function askAssistant(prompt, messageHistory = []) {
       ? Number(monthlyExpenses._sum.amount)
       : 0;
     const budgetStr = budget
-      ? `Monthly Budget: $${budget.amount} | Spent this month: $${currentSpending} | Remaining: $${Number(budget.amount) - currentSpending}`
+      ? `Monthly Budget: ₹${budget.amount} | Spent this month: ₹${currentSpending} | Remaining: ₹${Number(budget.amount) - currentSpending}`
       : "No budget has been set.";
 
     // Transactions with full context
     const transactionsStr = transactions.length
       ? transactions
           .map((t) => {
-            let line = `[${t.date.toISOString().split("T")[0]}] ${t.type}: $${t.amount} - ${t.category} (${t.description || "No description"}) | Account: ${t.account.name}`;
+            let line = `[${t.date.toISOString().split("T")[0]}] ${t.type}: ₹${t.amount} - ${t.category} (${t.description || "No description"}) | Account: ${t.account.name}`;
             if (t.isRecurring) {
               line += ` | Recurring: ${t.recurringInterval}`;
               if (t.nextRecurringDate) {
@@ -136,6 +136,8 @@ ${transactionsStr}
 
 === INSTRUCTIONS ===
 - Answer the user's query based on ALL the provided financial data and general financial knowledge.
+- **IMPORTANT**: All currency amounts are in **Indian Rupees (INR/₹)**. Always use the ₹ symbol in your responses.
+- Use the **Indian Numbering System** (e.g., 1,00,000 for 1 Lakh, 1,00,00,000 for 1 Crore) when discussing large amounts.
 - You can answer questions about specific accounts by name, budget status, recurring expenses, and transaction history.
 - If the user refers to an account by name, match it to the accounts listed above.
 - Keep your responses concise, clear, and actionable. Format your response in plain text or simple markdown.

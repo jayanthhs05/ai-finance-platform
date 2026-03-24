@@ -158,14 +158,12 @@ export function NoPaginationTransactionTable({ transactions }) {
     )
       return;
 
-    deleteFn(selectedIds);
+    toast.promise(deleteFn(selectedIds), {
+      loading: "Deleting transactions...",
+      success: "Transactions deleted successfully",
+      error: "Failed to delete transactions",
+    });
   };
-
-  useEffect(() => {
-    if (deleted && !deleteLoading) {
-      toast.error("Transactions deleted successfully");
-    }
-  }, [deleted, deleteLoading]);
 
   const handleClearFilters = () => {
     setSearchTerm("");

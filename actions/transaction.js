@@ -239,11 +239,12 @@ export async function scanReceipt(file) {
 
     const prompt = `
       Analyze this receipt image and extract the following information in JSON format:
-      - Total amount (just the number)
+      - Total amount (just the number) - assume INR (₹).
       - Date (in ISO format)
       - Description or items purchased (brief summary)
       - Merchant/store name
-      - Suggested category (one of: housing,transportation,groceries,utilities,entertainment,food,shopping,healthcare,education,personal,travel,insurance,gifts,bills,other-expense )
+      - Suggested category (one of: housing, transportation, groceries, utilities, entertainment, food, shopping, healthcare, education, personal, travel, insurance, gifts, bills, other-expense, salary, freelance, investments, business, rental, other-income) - return the EXACT category ID from this list.
+      - Type (INCOME or EXPENSE) - If its an earnings statement or salary slip, its INCOME. Default to EXPENSE if not sure.
       
       Only respond with valid JSON in this exact format:
       {
@@ -251,7 +252,8 @@ export async function scanReceipt(file) {
         "date": "ISO date string",
         "description": "string",
         "merchantName": "string",
-        "category": "string"
+        "category": "string",
+        "type": "EXPENSE" | "INCOME"
       }
 
       If its not a recipt, return an empty object
@@ -279,6 +281,7 @@ export async function scanReceipt(file) {
         description: data.description,
         category: data.category,
         merchantName: data.merchantName,
+        type: data.type || "EXPENSE",
       };
     } catch (parseError) {
       console.error("Error parsing JSON response:", parseError);
@@ -287,6 +290,129 @@ export async function scanReceipt(file) {
   } catch (error) {
     console.error("Error scanning receipt:", error);
     throw new Error("Failed to scan receipt");
+  }
+}
+
+// Parse Natural Language Transaction
+export async function parseNLTransaction(prompt) {
+  try {
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    const systemPrompt = `
+      You are an expert financial assistant. Analyze the user's natural language input and extract transaction details.
+      Analyze the input might contain multiple transactions. For each transaction, identify:
+      - Amount (number) - assume INR (₹) if not specified.
+      - Date (ISO format, e.g., "2024-03-24T00:00:00.000Z", default to today if not specified, handle relative dates like "yesterday", "last Friday")
+      - Description (brief summary)
+      - Category (one of the following: housing, transportation, groceries, utilities, entertainment, food, shopping, healthcare, education, personal, travel, insurance, gifts, bills, other-expense, salary, freelance, investments, business, rental, other-income) - return the EXACT category ID from this list.
+      - Type (INCOME or EXPENSE)
+
+      CRITICAL: A single prompt may contain BOTH income and expense transactions. Detect each separately based on the context (e.g., "spent" vs "paid me back" or "earned").
+
+      If the user says "I spent", "I paid", "bought", etc. - it's an EXPENSE.
+      If the user says "I received", "earned", "salary", etc. - it's an INCOME.
+
+      Today's date is ${new Date().toISOString().split("T")[0]}.
+
+      Only respond with valid JSON in this exact format:
+      [
+        {
+          "amount": number,
+          "date": "ISO date string",
+          "description": "string",
+          "category": "string",
+          "type": "EXPENSE" | "INCOME"
+        }
+      ]
+    `;
+
+    const result = await model.generateContent([systemPrompt, prompt]);
+    const response = await result.response;
+    const text = response.text();
+    const cleanedText = text.replace(/```(?:json)?\n?/g, "").trim();
+
+    return JSON.parse(cleanedText);
+  } catch (error) {
+    console.error("Error parsing NL transaction:", error);
+    throw new Error("Failed to parse transaction. Please try again.");
+  }
+}
+
+// Get Transaction Summary
+export async function getTransactionsSummary(range) {
+  try {
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    const user = await db.user.findUnique({
+      where: { clerkUserId: userId },
+    });
+
+    if (!user) throw new Error("User not found");
+
+    const transactions = await db.transaction.findMany({
+      where: {
+        userId: user.id,
+        date: {
+          gte: range.from,
+          lte: range.to,
+        },
+      },
+      orderBy: { date: "desc" },
+    });
+
+    if (transactions.length === 0) {
+      return "No transactions found for this period.";
+    }
+
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    const transactionsStr = transactions
+      .map(
+        (t) =>
+          `${t.date.toISOString().split("T")[0]}: ${t.type} ${t.amount} - ${t.category} (${t.description || "No description"})`
+      )
+      .join("\n");
+
+    const prompt = `
+      Analyze these transactions and provide a concise, professional summary of the user's financial activity for this period. 
+      Mention major spending categories, total income vs total expense, and any notable patterns.
+      Keep it brief (3-4 sentences max).
+
+      Transactions:
+      ${transactionsStr}
+    `;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
+  } catch (error) {
+    console.error("Error generating summary:", error);
+    throw new Error("Failed to generate summary.");
+  }
+}
+
+// Get Category Recommendation
+export async function getCategoryRecommendation(description) {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    const prompt = `
+      Suggest a category for this transaction description: "${description}"
+      Choose from: housing, transportation, groceries, utilities, entertainment, food, shopping, healthcare, education, personal, travel, insurance, gifts, bills, other-expense, salary, freelance, investments, business, rental, other-income.
+      Only respond with the category name, nothing else.
+      If unsure, return "other-expense".
+    `;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text().trim().toLowerCase();
+  } catch (error) {
+    console.error("Error recommending category:", error);
+    return "other-expense";
   }
 }
 
